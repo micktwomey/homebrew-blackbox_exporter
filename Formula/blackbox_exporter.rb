@@ -11,14 +11,70 @@ class BlackboxExporter < Formula
   depends_on "go" => :build
 
   def install
-    dflags = %W[
+    ldflags = %W[
       -s -w
       -X github.com/prometheus/common/version.Version=#{version}
       -X github.com/prometheus/common/version.BuildUser=Homebrew
     ]
     system "go", "build", *std_go_args(ldflags: ldflags)
 
-    touch etc/"blackbox_exporter.args"
+    (buildpath/"blackbox_exporter.args").write <<~EOS
+      --config.file=#{etc}/blackbox_exporter.yml
+    EOS
+
+    (buildpath/"blackbox_exporter.yml").write <<~EOS
+      modules:
+        http_2xx:
+          prober: http
+        http_post_2xx:
+          prober: http
+          http:
+            method: POST
+        tcp_connect:
+          prober: tcp
+        pop3s_banner:
+          prober: tcp
+          tcp:
+            query_response:
+            - expect: "^+OK"
+            tls: true
+            tls_config:
+              insecure_skip_verify: false
+        grpc:
+          prober: grpc
+          grpc:
+            tls: true
+            preferred_ip_protocol: "ip4"
+        grpc_plain:
+          prober: grpc
+          grpc:
+            tls: false
+            service: "service1"
+        ssh_banner:
+          prober: tcp
+          tcp:
+            query_response:
+            - expect: "^SSH-2.0-"
+            - send: "SSH-2.0-blackbox-ssh-check"
+        irc_banner:
+          prober: tcp
+          tcp:
+            query_response:
+            - send: "NICK prober"
+            - send: "USER prober prober prober :prober"
+            - expect: "PING :([^ ]+)"
+              send: "PONG ${1}"
+            - expect: "^:[^ ]+ 001"
+        icmp:
+          prober: icmp
+        icmp_ttl5:
+          prober: icmp
+          timeout: 5s
+          icmp:
+            ttl: 5
+    EOS
+
+    etc.install "blackbox_exporter.args", "blackbox_exporter.yml"
 
     (bin/"blackbox_exporter_brew_services").write <<~EOS
       #!/bin/bash
@@ -46,6 +102,6 @@ class BlackboxExporter < Formula
 
     fork { exec bin/"blackbox_exporter" }
     sleep 2
-    assert_match "# HELP", shell_output("curl -s localhost:9100/metrics")
+    assert_match "# HELP", shell_output("curl -s localhost:9115/metrics")
   end
 end
