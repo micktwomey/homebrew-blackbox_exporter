@@ -26,10 +26,13 @@ class BlackboxExporter < Formula
       modules:
         http_2xx:
           prober: http
+          http:
+            preferred_ip_protocol: ip4
         http_post_2xx:
           prober: http
           http:
             method: POST
+            preferred_ip_protocol: ip4
         tcp_connect:
           prober: tcp
         pop3s_banner:
