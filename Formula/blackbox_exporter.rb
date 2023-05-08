@@ -35,6 +35,8 @@ class BlackboxExporter < Formula
             preferred_ip_protocol: ip4
         tcp_connect:
           prober: tcp
+          tcp:
+            preferred_ip_protocol: ip4
         pop3s_banner:
           prober: tcp
           tcp:
@@ -43,6 +45,7 @@ class BlackboxExporter < Formula
             tls: true
             tls_config:
               insecure_skip_verify: false
+            preferred_ip_protocol: ip4
         grpc:
           prober: grpc
           grpc:
@@ -53,12 +56,14 @@ class BlackboxExporter < Formula
           grpc:
             tls: false
             service: "service1"
+            preferred_ip_protocol: ip4
         ssh_banner:
           prober: tcp
           tcp:
             query_response:
             - expect: "^SSH-2.0-"
             - send: "SSH-2.0-blackbox-ssh-check"
+            preferred_ip_protocol: ip4
         irc_banner:
           prober: tcp
           tcp:
@@ -68,13 +73,17 @@ class BlackboxExporter < Formula
             - expect: "PING :([^ ]+)"
               send: "PONG ${1}"
             - expect: "^:[^ ]+ 001"
+            preferred_ip_protocol: ip4
         icmp:
           prober: icmp
+          icmp:
+            preferred_ip_protocol: ip4
         icmp_ttl5:
           prober: icmp
           timeout: 5s
           icmp:
             ttl: 5
+            preferred_ip_protocol: ip4
     EOS
 
     etc.install "blackbox_exporter.args", "blackbox_exporter.yml"
@@ -96,6 +105,7 @@ class BlackboxExporter < Formula
   service do
     run [opt_bin/"blackbox_exporter_brew_services"]
     keep_alive false
+    require_root true
     log_path var/"log/blackbox_exporter.log"
     error_log_path var/"log/blackbox_exporter.err.log"
   end
