@@ -5,6 +5,8 @@ class BlackboxExporter < Formula
   sha256 "516e36badac48f25ff905cc7561ad9013db40ac22194f8ad2821779c29a441a4"
   license "Apache-2.0"
 
+  option "with-root", "Runs blackbox_exporter service as root."
+
   depends_on "go" => :build
 
   def install
@@ -102,7 +104,9 @@ class BlackboxExporter < Formula
   service do
     run [opt_bin/"blackbox_exporter_brew_services"]
     keep_alive false
-    require_root true
+    if build.with? "root"
+      require_root true
+    end
     log_path var/"log/blackbox_exporter.log"
     error_log_path var/"log/blackbox_exporter.err.log"
   end
